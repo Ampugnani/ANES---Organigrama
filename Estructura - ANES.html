@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+<title>ANES — Estructura Organizativa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: "Arial", sans-serif; margin:0; padding:0; color:#1f2937; background:#e9ebef;
+}
+
+.doc-title { text-align:center; padding:22px 10px 14px 10px; }
+.doc-title h1 { font-size:19px; color:#26314f; margin:0 0 4px 0; }
+.doc-title p { font-size:11px; color:#6b7280; margin:0; }
+
+.nav { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; padding: 0 10px 22px 10px; }
+.nav a {
+  font-size:10.5px; color:#26314f; text-decoration:none; border:1px solid #26314f;
+  padding:5px 12px; border-radius:14px; background:#fff;
+}
+.nav a:hover { background:#26314f; color:#fff; }
+
+/* ---------- Page card ---------- */
+.page {
+  background:#fff;
+  width: fit-content;
+  max-width: 98vw;
+  min-width: 0;
+  margin: 0 auto 26px auto;
+  padding: 0 0 22px 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  border-radius:4px;
+  scroll-margin-top: 14px;
+  overflow: visible;
+}
+.header { background:#26314f; color:#fff; padding:10px 20px; border-radius:4px 4px 0 0; }
+.header .org { font-size:12.5px; font-weight:bold; letter-spacing:0.3px; }
+.header .min { font-size:10.5px; opacity:0.9; margin-top:1px; }
+
+.chart-title { text-align:center; font-size:14.5px; font-weight:bold; color:#26314f; margin: 14px 20px 14px 20px; }
+
+.anexo-note {
+  text-align:center; font-size:9px; color:#6b5300; background:#fff7e0; border:1px solid #f0dca0;
+  padding:6px 10px; max-width:820px; margin: 0 auto 16px auto; border-radius:3px;
+}
+
+.note {
+  margin: 22px 20px 0 20px; font-size:9px; color:#374151; line-height:1.5;
+  border:1px solid #d1d5db; background:#f9fafb; padding:8px 12px; border-radius:3px;
+}
+.note b { color:#26314f; }
+
+/* ---------- Cluster spacing ---------- */
+.cluster { padding: 20px 20px 0 20px; margin-bottom: 6px; border-top: 1px dashed #d8dce3; }
+.cluster:first-child { border-top: none; padding-top:0; }
+.cluster-title { text-align:center; font-size:10px; font-weight:bold; color:#7a6100; margin-bottom:6px; }
+
+/* ---------- Clusters en fila horizontal (Anexo Ic) ---------- */
+.cluster-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+}
+.cluster-row .cluster {
+  border-top: none;
+  border-left: 1px dashed #d8dce3;
+  padding: 10px 24px 20px 24px;
+  margin-bottom: 20px;
+}
+.cluster-row .cluster:first-child { border-left: none; }
+
+/* ---------- Mobile: cada tarjeta se desliza horizontalmente ---------- */
+.mobile-hint { display:none; }
+
+@media (max-width: 900px) {
+  .page { width:100%; max-width:100%; }
+  .scroll-wrap {
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:10px;
+  }
+  .scroll-wrap::-webkit-scrollbar { height:7px; }
+  .scroll-wrap::-webkit-scrollbar-thumb { background:#b9bfcc; border-radius:4px; }
+
+  .mobile-hint {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:11px; color:#3b4a6b; background:#eef2ff; border:1px solid #c7d2fe;
+    border-radius:6px; padding:7px 10px; margin:0 10px 14px 10px;
+  }
+
+  .toolbar { gap:5px; padding:8px; }
+  .toolbar .tb-title { font-size:10px; width:100%; text-align:center; margin:0 0 4px 0; }
+  .toolbar button { font-size:9.5px; padding:6px 9px; }
+  .toolbar .status { font-size:8.5px; min-width:0; width:100%; text-align:center; }
+
+  .legend { font-size:9px; gap:10px; padding:0 8px 10px 8px; }
+
+  .doc-title h1 { font-size:15px; }
+  .doc-title p { font-size:9.5px; }
+  .nav { gap:6px; }
+  .nav a { font-size:9.5px; padding:4px 9px; }
+}
+
+/* ---------- Classic CSS tree (nested ul/li, right-angle connectors) ---------- */
+.tree, .tree ul { display:flex; justify-content:center; padding-top: 0; position:relative; }
+.tree, .tree ul, .tree li { list-style:none; margin:0; padding:0; }
+
+.tree li {
+  display:flex; flex-direction:column; align-items:center;
+  padding: 20px 7px 0 7px; position:relative;
+}
+
+/* horizontal half-lines joining siblings */
+.tree li::before, .tree li::after {
+  content:''; position:absolute; top:0; right:50%;
+  border-top: 1.6px solid #29365a; width:50%; height:20px;
+}
+.tree li::after { right:auto; left:50%; border-left:1.6px solid #29365a; }
+
+.tree li:only-child { padding-top:0; }
+.tree li:only-child::before, .tree li:only-child::after { display:none; }
+
+.tree li:first-child::before { border:0 none; }
+.tree li:last-child::after { border:0 none; }
+.tree li:last-child::before { border-right: 1.6px solid #29365a; border-radius: 0 3px 0 0; }
+.tree li:first-child::after { border-radius: 3px 0 0 0; }
+
+/* vertical line from a parent node down to its children ul */
+.tree ul { padding-top: 20px; position:relative; }
+.tree > li > ul::before,
+.tree li ul::before {
+  content:''; position:absolute; top:0; left:50%;
+  border-left: 1.6px solid #29365a; width:0; height:20px;
+}
+/* the outermost cluster's root li needs no top connector */
+.tree.root-cluster > li { padding-top:0; }
+.tree.root-cluster > li::before, .tree.root-cluster > li::after { display:none; }
+
+/* ---------- Boxes ---------- */
+.box {
+  border:1.4px solid #29365a;
+  border-radius:3px;
+  padding:5px 6px;
+  width:118px;
+  text-align:center;
+  font-size:8.3px;
+  line-height:1.25;
+  background:#ffffff;
+}
+.box.top { background:#26314f; color:#fff; font-weight:bold; font-size:8.9px; width:205px; }
+.box .cargo { font-weight:bold; }
+.box .persona { margin-top:3px; font-size:7.9px; color:#1f2937; font-weight:bold; }
+.box.top .persona { color:#ffffff; font-weight:normal; }
+.box .vacante { margin-top:3px; font-size:7.6px; color:#9ca3af; font-style:italic; }
+
+/* ---------- Editable fields ---------- */
+.field {
+  outline: none;
+  cursor: text;
+  border-radius: 2px;
+  min-height: 1.1em;
+}
+.field:hover { background: rgba(37,99,235,0.08); }
+.field:focus { background: rgba(37,99,235,0.14); box-shadow: 0 0 0 1px #2563eb; }
+.field.is-vacant { color:#9ca3af; font-style:italic; font-weight:normal; }
+.box.top .field.is-vacant { color:#c7cbe0; }
+
+/* ---------- Semáforo de validación ---------- */
+.persona-row { display:flex; align-items:center; justify-content:center; gap:4px; margin-top:3px; }
+.status-dot {
+  flex: 0 0 auto;
+  width:9px; height:9px; border-radius:50%;
+  border:1.3px solid #b9bfcc; background:#fff;
+  padding:0; cursor:default; line-height:0; opacity:1;
+}
+.status-dot.st-red    { background:#e5484d; border-color:#c81e2c; }
+.status-dot.st-yellow { background:#f5c518; border-color:#c99a05; }
+.status-dot.st-green  { background:#30a46c; border-color:#1c7a4d; }
+.box.top .status-dot { border-color:#c7cbe0; }
+
+.field.persona.st-red    { color:#dc2626; }
+.field.persona.st-yellow { color:#b7860b; }
+.field.persona.st-green  { color:#16a34a; }
+.box.top .field.persona.st-red    { color:#ff9d95; }
+.box.top .field.persona.st-yellow { color:#ffe08a; }
+.box.top .field.persona.st-green  { color:#8fe3b3; }
+
+.legend {
+  display:flex; justify-content:center; align-items:center; gap:16px; flex-wrap:wrap;
+  font-size:10px; color:#4b5563; padding: 0 10px 14px 10px;
+}
+.legend .item { display:flex; align-items:center; gap:5px; }
+.legend .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.legend .dot.st-red { background:#e5484d; }
+.legend .dot.st-yellow { background:#f5c518; }
+.legend .dot.st-green { background:#30a46c; }
+
+/* ---------- Referencia normativa (Expediente / Resolución de designación) ---------- */
+.norma-ref {
+  margin-top: 3px;
+  padding-top: 2px;
+  border-top: 1px dotted rgba(0,0,0,0.12);
+  line-height: 1.25;
+  text-align: center;
+}
+.box.top .norma-ref { border-top-color: rgba(255,255,255,0.25); }
+
+.norma-ref .norma-main { font-size: 7.2px; font-weight: bold; font-style: normal; }
+.norma-ref .norma-exp  { font-size: 6.3px; font-style: italic; opacity: 0.9; margin-top: 1px; }
+.norma-ref .norma-date { font-weight: normal; }
+
+/* Resuelto: Resolución/Decreto firmado y publicado */
+.norma-ref.resuelto { color:#1d4ed8; }
+.norma-ref.resuelto a { color:inherit; text-decoration:underline; }
+.box.top .norma-ref.resuelto { color:#bcd2ff; }
+
+/* En trámite: expediente abierto, sin norma firmada todavía */
+.norma-ref.en-tramite { color:#c2410c; }
+.box.top .norma-ref.en-tramite { color:#ffc48a; }
+
+/* Conflicto: el expediente figura a nombre de otra persona distinta del campo editable */
+.norma-ref.conflict {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 3px;
+  padding: 2px 3px;
+  margin-top: 3px;
+}
+.box.top .norma-ref.conflict { background: rgba(254,242,242,0.15); border-color:#fca5a5; }
+
+/* Sin dato: no se encontró expediente ni norma */
+.norma-ref.sin-dato { font-size: 6.6px; font-style: italic; color:#9ca3af; }
+.box.top .norma-ref.sin-dato { color:#c7cbe0; }
+
+.legend .swatch-text { font-style:normal; font-weight:bold; }
+.legend .swatch-text.resuelto { color:#1d4ed8; }
+.legend .swatch-text.en-tramite { color:#c2410c; }
+.legend .swatch-text.sin-dato { color:#9ca3af; font-weight:normal; font-style:italic; }
+
+/* ---------- Toolbar ---------- */
+.toolbar {
+  position: sticky; top:0; z-index:50;
+  display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap;
+  background:#1c2743; padding:10px 14px; box-shadow:0 2px 6px rgba(0,0,0,0.25);
+}
+.toolbar .tb-title { color:#fff; font-size:11.5px; font-weight:bold; margin-right:10px; }
+.toolbar button {
+  font-family:inherit; font-size:10.5px; font-weight:bold; cursor:pointer;
+  border:1px solid #4b5a86; background:#2a3a63; color:#fff; padding:7px 13px; border-radius:16px;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.toolbar button:hover { background:#38508a; }
+.toolbar button.primary { background:#c0392b; border-color:#c0392b; }
+.toolbar button.primary:hover { background:#e0473a; }
+.toolbar button.confirm-pending { background:#c0392b; border-color:#ffb4a8; animation:pulse-confirm 1s ease-in-out infinite; }
+@keyframes pulse-confirm { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+.toolbar .status { color:#a9b3d1; font-size:9.5px; min-width:120px; }
+.toolbar .sync-badge { font-size:8.5px; color:#8fe3b3; display:flex; align-items:center; gap:4px; }
+.toolbar .sync-badge.offline { color:#ffc48a; }
+.toolbar input[type=file] { display:none; }
+
+@media (max-width: 900px) {
+  .status-dot { width:15px; height:15px; }
+}
+
+@media print {
+  .toolbar, .legend { display:none !important; }
+  body > .anexo-note { display:none !important; }
+  .field:hover, .field:focus { background:none; box-shadow:none; }
+}
+
+@media print {
+  @page { size: A3 landscape; margin: 10mm; }
+  body { background:#fff; }
+  .doc-title, .nav { display:none; }
+  .page { box-shadow:none; border-radius:0; margin:0 auto 0 auto; page-break-after: always; max-width:none; }
+  .page:last-child { page-break-after: auto; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="tb-title">📋 Vista de consulta — solo lectura</span>
+  <button id="btn-print" class="primary" title="Descargar como PDF horizontal">📄 Descargar PDF</button>
+  <button id="btn-export" title="Descargar como JSON">⬇️ Exportar JSON</button>
+  <span class="status" id="tb-status"></span>
+</div>
+<div class="legend">
+  <span class="item"><span class="dot st-green"></span> Verde — Equipo nuestro, 100% confianza</span>
+  <span class="item"><span class="dot st-yellow"></span> Amarillo — Heredado de la gestión anterior, con buena predisposición</span>
+  <span class="item"><span class="dot st-red"></span> Rojo — Acuerdo o pedido de la política</span>
+  <span class="item" style="color:#9ca3af;">Hacé clic en el punto junto al nombre para cambiar el estado</span>
+</div>
+<div class="legend" style="padding-top:0;">
+  <span class="item swatch-text resuelto">Azul — Resolución/Decreto de designación ya firmado</span>
+  <span class="item swatch-text en-tramite">Naranja — expediente en trámite, sin norma firmada aún</span>
+  <span class="item swatch-text sin-dato">Gris — sin expediente ni designación formal encontrada</span>
+</div>
+<div class="doc-title">
+  <h1>ANES — Estructura Organizativa · Anexos Ia / Ib / Ic <span style="font-weight:normal;color:#6b7280;">(versión editable)</span></h1>
+  <p>Administración Nacional de Establecimientos de Salud · Ministerio de Salud de la Nación · Hacé clic sobre un nombre para asignarlo o modificarlo</p>
+</div>
+<div class="nav">
+  <a href="#anexo1a">Anexo Ia — Auditoría Interna</a>
+  <a href="#anexo1b">Anexo Ib — Coord. Legal/Adm. y Gestión Estratégica</a>
+  <a href="#anexo1c">Anexo Ic — Adquisiciones, Finanzas, Jurídicos, RRHH y TIC</a>
+</div>
+<div class="mobile-hint">👉 Deslizá cada organigrama hacia los costados para verlo completo</div>
+
+  <section class="page" id="anexo1a">
+    <div class="header">
+      <div class="org">ADMINISTRACIÓN NACIONAL DE ESTABLECIMIENTOS DE SALUD (ANES)</div>
+      <div class="min">MINISTERIO DE SALUD — Unidad de Auditoría Interna</div>
+    </div>
+    <div class="chart-title">Anexo Ia — Unidad de Auditoría Interna</div>
+    <div class="scroll-wrap">
+    
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">UNIDAD DE AUDITORÍA INTERNA</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_uai" title="Estado de validación"></button><div class="field persona" data-id="n_uai" spellcheck="false" data-cargo="UNIDAD DE AUDITORÍA INTERNA">Viola, Juan</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div><ul><li><div class="box"><div class="cargo">Auditoría Interna Adjunta de Apoyo</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_uai_apoyo" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_uai_apoyo" spellcheck="false" data-cargo="Auditoría Interna Adjunta de Apoyo">(Vacante)</div></div></div><ul><li><div class="box"><div class="cargo">Sup. Auditoría Contable</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_sup_cont" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_sup_cont" spellcheck="false" data-cargo="Sup. Auditoría Contable">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Sup. Auditoría de Sistemas</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_sup_sist" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_sup_sist" spellcheck="false" data-cargo="Sup. Auditoría de Sistemas">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Sup. Auditoría Legal</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_sup_leg" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_sup_leg" spellcheck="false" data-cargo="Sup. Auditoría Legal">(Vacante)</div></div></div></li></ul></li><li><div class="box"><div class="cargo">Auditoría Interna Adjunta de Establecimientos Hospitalarios</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_uai_estab" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_uai_estab" spellcheck="false" data-cargo="Auditoría Interna Adjunta de Establecimientos Hospitalarios">(Vacante)</div></div></div><ul><li><div class="box"><div class="cargo">Sup. Auditoría H. Sommer</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_aud_som" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_aud_som" spellcheck="false" data-cargo="Sup. Auditoría H. Sommer">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Sup. Auditoría H. Bonaparte</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_aud_bon" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_aud_bon" spellcheck="false" data-cargo="Sup. Auditoría H. Bonaparte">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Sup. Auditoría H. Posadas</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_aud_pos" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_aud_pos" spellcheck="false" data-cargo="Sup. Auditoría H. Posadas">(Vacante)</div></div></div><ul><li><div class="box"><div class="cargo">Responsable Auditoría 1</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_resp_1" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_resp_1" spellcheck="false" data-cargo="Responsable Auditoría 1">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Responsable Auditoría 2</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_resp_2" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_resp_2" spellcheck="false" data-cargo="Responsable Auditoría 2">(Vacante)</div></div></div></li></ul></li><li><div class="box"><div class="cargo">Sup. Auditoría INAREPS</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_aud_ina" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_aud_ina" spellcheck="false" data-cargo="Sup. Auditoría INAREPS">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Sup. Auditoría H. Carrillo</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_aud_car" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_aud_car" spellcheck="false" data-cargo="Sup. Auditoría H. Carrillo">(Vacante)</div></div></div></li></ul></li></ul></li></ul>
+    </div>
+  </div>
+  </section>
+
+
+  <section class="page" id="anexo1b">
+    <div class="header">
+      <div class="org">ADMINISTRACIÓN NACIONAL DE ESTABLECIMIENTOS DE SALUD (ANES)</div>
+      <div class="min">MINISTERIO DE SALUD — Coordinación Legal y Administrativa · Enlace Hospitalario · Gestión Estratégica</div>
+    </div>
+    <div class="chart-title">Anexo Ib — Coordinación Legal y Administrativa · Enlace Hospitalario · Gestión Estratégica</div>
+    <div class="scroll-wrap">
+    
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN EJECUTIVA DE COORDINACIÓN LEGAL Y ADMINISTRATIVA</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_deca" title="Estado de validación"></button><div class="field persona" data-id="n_deca" spellcheck="false" data-cargo="DIRECCIÓN EJECUTIVA DE COORDINACIÓN LEGAL Y ADMINISTRATIVA">Escudero, Leandro</div></div><div class="norma-ref resuelto">Decreto N° 820/2025</div></div><ul><li><div class="box"><div class="cargo">Dir. Enlace H. Bonaparte</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_enl_bon" title="Estado de validación"></button><div class="field persona" data-id="n_enl_bon" spellcheck="false" data-cargo="Dir. Enlace H. Bonaparte">Pacheco, Pamela</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Dir. Enlace H. Sommer</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_enl_som" title="Estado de validación"></button><div class="field persona" data-id="n_enl_som" spellcheck="false" data-cargo="Dir. Enlace H. Sommer">Berchasky, Eduardo</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Dir. Enlace H. Posadas</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_enl_pos" title="Estado de validación"></button><div class="field persona" data-id="n_enl_pos" spellcheck="false" data-cargo="Dir. Enlace H. Posadas">Aucielo, Daniel</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div><ul><li><div class="box"><div class="cargo">Coord. Enlace Adm.-Contable (Posadas)</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_coord_adm" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_coord_adm" spellcheck="false" data-cargo="Coord. Enlace Adm.-Contable (Posadas)">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Coord. de Seguridad (Posadas)</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_coord_seg" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_coord_seg" spellcheck="false" data-cargo="Coord. de Seguridad (Posadas)">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Coord. Enlace RRHH (Posadas)</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_coord_rrhh_pos" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_coord_rrhh_pos" spellcheck="false" data-cargo="Coord. Enlace RRHH (Posadas)">(Vacante)</div></div></div></li></ul></li><li><div class="box"><div class="cargo">Dir. Enlace INAREPS</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_enl_ina" title="Estado de validación"></button><div class="field persona" data-id="n_enl_ina" spellcheck="false" data-cargo="Dir. Enlace INAREPS">Cuvillier, Héctor</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Dir. Enlace H. Carrillo</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_enl_car" title="Estado de validación"></button><div class="field persona" data-id="n_enl_car" spellcheck="false" data-cargo="Dir. Enlace H. Carrillo">Alessio, Pedro</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Dir. Gestión Documental</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_gest_doc" title="Estado de validación"></button><div class="field persona" data-id="n_gest_doc" spellcheck="false" data-cargo="Dir. Gestión Documental">Gacio, Daniel</div></div><div class="norma-ref resuelto"><div class="norma-main">RESOL-2026-1429-APN-MS <span class="norma-date">(08/10/2026)</span></div><div class="norma-exp">Exp. EX-2026-81524043-APN-CLYA#ANES</div></div></div></li><li><div class="box"><div class="cargo">Dir. de Sumarios</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_sumarios" title="Estado de validación"></button><div class="field persona" data-id="n_sumarios" spellcheck="false" data-cargo="Dir. de Sumarios">Victoria Botta</div></div><div class="norma-ref en-tramite"><div class="norma-main">En trámite</div><div class="norma-exp">Exp. EX-2026-81523660-APN-CLYA#ANES<br>22/10: en intervención de Eduardo Mauri (DND#PTN)</div></div></div></li></ul></li></ul>
+    </div>
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN GENERAL DE GESTIÓN ESTRATÉGICA Y RECURSOS HOSPITALARIOS</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dg_gest" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_dg_gest" spellcheck="false" data-cargo="DIRECCIÓN GENERAL DE GESTIÓN ESTRATÉGICA Y RECURSOS HOSPITALARIOS">(Vacante)</div></div></div><ul><li><div class="box"><div class="cargo">Dir. Planificación Estratégica y Gestión de la Calidad</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_planif" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_planif" spellcheck="false" data-cargo="Dir. Planificación Estratégica y Gestión de la Calidad">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Dir. Sistemas de Información y Gestión del Conocimiento</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_sist_info" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_sist_info" spellcheck="false" data-cargo="Dir. Sistemas de Información y Gestión del Conocimiento">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Dir. de Investigación Clínica</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_invest" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_invest" spellcheck="false" data-cargo="Dir. de Investigación Clínica">(Vacante)</div></div></div></li></ul></li></ul>
+    </div>
+    <div class="cluster">
+      <div class="cluster-title">Denominación modificada (reunión 23/09/25)</div>
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN GENERAL DE COORDINACIÓN INSTITUCIONAL</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dg_coord_inst" title="Estado de validación"></button><div class="field persona" data-id="n_dg_coord_inst" spellcheck="false" data-cargo="DIRECCIÓN GENERAL DE COORDINACIÓN INSTITUCIONAL">Maestripieri, Juani</div></div><div class="norma-ref resuelto"><div class="norma-main">RESOL-2026-1485-APN-MS <span class="norma-date">(19/10/2026)</span></div><div class="norma-exp">Exp. EX-2026-81520938-APN-CLYA#ANES</div></div></div></li></ul>
+    </div>
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN GENERAL DE INFRAESTRUCTURA Y MANTENIMIENTO HOSPITALARIO</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dg_infra" title="Estado de validación"></button><div class="field persona" data-id="n_dg_infra" spellcheck="false" data-cargo="DIRECCIÓN GENERAL DE INFRAESTRUCTURA Y MANTENIMIENTO HOSPITALARIO">Díaz, Leonardo</div></div><div class="norma-ref resuelto"><div class="norma-main">RESOL-2026-1428-APN-MS <span class="norma-date">(08/10/2026)</span></div><div class="norma-exp">Exp. EX-2026-81523201-APN-CLYA#ANES</div></div></div></li></ul>
+    </div>
+  </div>
+  </section>
+
+
+  <section class="page" id="anexo1c">
+    <div class="header">
+      <div class="org">ADMINISTRACIÓN NACIONAL DE ESTABLECIMIENTOS DE SALUD (ANES)</div>
+      <div class="min">MINISTERIO DE SALUD — Adquisiciones · Finanzas y Presupuesto · Asuntos Jurídicos · RRHH · TIC</div>
+    </div>
+    <div class="chart-title">Anexo Ic — Adquisiciones · Finanzas y Presupuesto · Asuntos Jurídicos · RRHH · TIC</div>
+    <div class="scroll-wrap">
+    <div class="cluster-row">
+    
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN GENERAL DE ADQUISICIONES Y PROCESOS</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dg_adq" title="Estado de validación"></button><div class="field persona" data-id="n_dg_adq" spellcheck="false" data-cargo="DIRECCIÓN GENERAL DE ADQUISICIONES Y PROCESOS">Fernández Cerdeña, Sebastián</div></div><div class="norma-ref en-tramite"><div class="norma-main">En trámite</div><div class="norma-exp">Exp. EX-2026-81522392-APN-CLYA#ANES<br>29/10: con dictamen jurídico, a la firma de Resolución</div></div></div><ul><li><div class="box"><div class="cargo">Dir. Planificación y Seguimiento de Procesos</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_seg_proc" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_seg_proc" spellcheck="false" data-cargo="Dir. Planificación y Seguimiento de Procesos">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Dir. Compras y Contrataciones</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_compras" title="Estado de validación"></button><div class="field persona" data-id="n_compras" spellcheck="false" data-cargo="Dir. Compras y Contrataciones">Ramírez, Matías</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Dir. Logística Integrada y Abastecimiento Sanitario</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_logist" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_logist" spellcheck="false" data-cargo="Dir. Logística Integrada y Abastecimiento Sanitario">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Coordinación de Patrimonio</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_patrim" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_patrim" spellcheck="false" data-cargo="Coordinación de Patrimonio">(Vacante)</div></div></div></li></ul></li></ul>
+    </div>
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN GENERAL DE FINANZAS Y PRESUPUESTO</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dg_fin" title="Estado de validación"></button><div class="field persona" data-id="n_dg_fin" spellcheck="false" data-cargo="DIRECCIÓN GENERAL DE FINANZAS Y PRESUPUESTO">Alonso, Sebastián</div></div><div class="norma-ref resuelto"><div class="norma-main"><a href="https://www.boletinoficial.gob.ar/detalleAviso/primera/349875/20261030" target="_blank" rel="noopener" style="color:inherit;">RESOL-2026-1561-APN-MS</a> <span class="norma-date">(27/10/2026)</span></div><div class="norma-exp">Exp. EX-2026-81524479-APN-CLYA#ANES</div></div></div><ul><li><div class="box"><div class="cargo">Dir. Programación y Control Presupuestario</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_presup" title="Estado de validación"></button><div class="field persona" data-id="n_presup" spellcheck="false" data-cargo="Dir. Programación y Control Presupuestario">Chas, Verónica</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Dir. Contabilidad y Finanzas</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_contab" title="Estado de validación"></button><div class="field persona" data-id="n_contab" spellcheck="false" data-cargo="Dir. Contabilidad y Finanzas">Scudiero, Romina</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Coordinación de Tesorería</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_tesore" title="Estado de validación"></button><div class="field persona" data-id="n_tesore" spellcheck="false" data-cargo="Coordinación de Tesorería">Solari, Camila</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li></ul></li></ul>
+    </div>
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN GENERAL DE ASUNTOS JURÍDICOS</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dg_jur" title="Estado de validación"></button><div class="field persona" data-id="n_dg_jur" spellcheck="false" data-cargo="DIRECCIÓN GENERAL DE ASUNTOS JURÍDICOS">Urrejola, Gastón</div></div><div class="norma-ref en-tramite conflict"><div class="norma-main">&#9888; Expediente a nombre de <b>Calero, Víctor Eduardo</b></div><div class="norma-exp">Exp. EX-2026-91987466-APN-SICYT#JGM<br>28/10: en adquisición de Adriana García (DND#PTN)</div></div></div><ul><li><div class="box"><div class="cargo">Dir. de Legales</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_legales" title="Estado de validación"></button><div class="field persona" data-id="n_legales" spellcheck="false" data-cargo="Dir. de Legales">Dalia, Mariela</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Dir. Asuntos Judiciales</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_judicial" title="Estado de validación"></button><div class="field persona" data-id="n_judicial" spellcheck="false" data-cargo="Dir. Asuntos Judiciales">Manolizi, Marina</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li></ul></li></ul>
+    </div>
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN GENERAL DE TECNOLOGÍA DE LA INFORMACIÓN Y DE LAS COMUNICACIONES</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dg_tic" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_dg_tic" spellcheck="false" data-cargo="DIRECCIÓN GENERAL DE TECNOLOGÍA DE LA INFORMACIÓN Y DE LAS COMUNICACIONES">(Vacante)</div></div></div><ul><li><div class="box"><div class="cargo">Dir. Desarrollo de Sistemas</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dev_sist" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_dev_sist" spellcheck="false" data-cargo="Dir. Desarrollo de Sistemas">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Dir. Infraestructura y Seguridad Informática</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_seg_info" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_seg_info" spellcheck="false" data-cargo="Dir. Infraestructura y Seguridad Informática">(Vacante)</div></div></div></li></ul></li></ul>
+    </div>
+    <div class="cluster">
+      
+      <ul class="tree root-cluster"><li><div class="box top"><div class="cargo">DIRECCIÓN GENERAL DE RECURSOS HUMANOS</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_dg_rrhh" title="Estado de validación"></button><div class="field persona" data-id="n_dg_rrhh" spellcheck="false" data-cargo="DIRECCIÓN GENERAL DE RECURSOS HUMANOS">Bentaverri, Rodolfo</div></div><div class="norma-ref resuelto"><div class="norma-main">RESOL-2026-1488-APN-MS <span class="norma-date">(19/10/2026)</span></div><div class="norma-exp">Exp. EX-2026-81521906-APN-CLYA#ANES</div></div></div><ul><li><div class="box"><div class="cargo">Dir. Administración de Personal</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_adm_pers" title="Estado de validación"></button><div class="field persona" data-id="n_adm_pers" spellcheck="false" data-cargo="Dir. Administración de Personal">Raissa, Nadia</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li><li><div class="box"><div class="cargo">Dir. Desarrollo de Carrera y Capacitación</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_cap" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_cap" spellcheck="false" data-cargo="Dir. Desarrollo de Carrera y Capacitación">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Dir. Salud Ocupacional</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_sal_ocup" title="Estado de validación"></button><div class="field persona is-vacant" data-id="n_sal_ocup" spellcheck="false" data-cargo="Dir. Salud Ocupacional">(Vacante)</div></div></div></li><li><div class="box"><div class="cargo">Coord. Liquidación de Haberes</div><div class="persona-row"><button type="button" disabled class="status-dot" data-status-for="n_haberes" title="Estado de validación"></button><div class="field persona" data-id="n_haberes" spellcheck="false" data-cargo="Coord. Liquidación de Haberes">Christiansen, Andrés</div></div><div class="norma-ref sin-dato">Sin designación formal publicada</div></div></li></ul></li></ul>
+    </div>
+  </div>
+  </div>
+  </section>
+
+<script>
+(function() {
+  var STORAGE_KEY = "anes_designaciones_v1";
+  // URL de la Google Apps Script Web App (termina en /exec) que guarda y sirve
+  // los datos compartidos entre dispositivos. Si queda vacía, el archivo
+  // funciona igual pero solo guarda los cambios en este dispositivo.
+  var SYNC_URL = ""; // vista de solo lectura: sin backend de escritura
+  var fields = Array.prototype.slice.call(document.querySelectorAll(".field[data-id]"));
+  var statusEl = document.getElementById("tb-status");
+  var syncBadge = document.getElementById("sync-badge");
+
+  var downloadsApi = null;
+  var pollTimer = null;
+
+  function setStatus(msg) {
+    statusEl.textContent = msg;
+    if (msg) setTimeout(function(){ if (statusEl.textContent === msg) statusEl.textContent = ""; }, 2500);
+  }
+
+  function setSyncBadge(mode) {
+    if (!syncBadge) return;
+    if (mode === "synced") {
+      syncBadge.textContent = "🔄 Sincronizado entre dispositivos";
+      syncBadge.classList.remove("offline");
+    } else if (mode === "local") {
+      syncBadge.textContent = "💾 Solo en este dispositivo";
+      syncBadge.classList.add("offline");
+    } else {
+      syncBadge.textContent = "";
+    }
+  }
+
+  function currentState() {
+    var names = {};
+    fields.forEach(function(f) {
+      var id = f.getAttribute("data-id");
+      var label = f.getAttribute("data-cargo");
+      var val = f.classList.contains("is-vacant") ? "" : f.textContent.trim();
+      var status = getStatus(f);
+      names[id] = { label: label, value: val, status: status };
+    });
+    return { names: names };
+  }
+
+  function applyState(state) {
+    if (!state || !state.names) return;
+    fields.forEach(function(f) {
+      var id = f.getAttribute("data-id");
+      if (Object.prototype.hasOwnProperty.call(state.names, id)) {
+        var entry = state.names[id];
+        var v = (entry.value || "").trim();
+        setFieldValue(f, v);
+        setStatusColor(f, entry.status || "");
+      }
+    });
+  }
+
+  function setFieldValue(f, v) {
+    if (v) {
+      f.textContent = v;
+      f.classList.remove("is-vacant");
+    } else {
+      f.textContent = "(Vacante)";
+      f.classList.add("is-vacant");
+    }
+  }
+
+  var STATUS_CYCLE = ["", "red", "yellow", "green"];
+  var STATUS_LABEL = {
+    "": "Sin estado",
+    "red": "Rojo — Acuerdo o pedido de la política",
+    "yellow": "Amarillo — Heredado de la gestión anterior, con buena predisposición",
+    "green": "Verde — Equipo nuestro, 100% confianza"
+  };
+
+  function getStatus(f) {
+    for (var i = 0; i < STATUS_CYCLE.length; i++) {
+      var s = STATUS_CYCLE[i];
+      if (s && f.classList.contains("st-" + s)) return s;
+    }
+    return "";
+  }
+
+  function setStatusColor(f, status) {
+    var dot = document.querySelector('.status-dot[data-status-for="' + f.getAttribute("data-id") + '"]');
+    STATUS_CYCLE.forEach(function(s) {
+      if (!s) return;
+      f.classList.remove("st-" + s);
+      if (dot) dot.classList.remove("st-" + s);
+    });
+    if (status) {
+      f.classList.add("st-" + status);
+      if (dot) dot.classList.add("st-" + status);
+    }
+    if (dot) dot.title = "Estado: " + STATUS_LABEL[status] + " (clic para cambiar)";
+  }
+
+  function cycleStatus(dot) {
+    var id = dot.getAttribute("data-status-for");
+    var field = document.querySelector('.field[data-id="' + id + '"]');
+    if (!field) return;
+    var current = getStatus(field);
+    var idx = STATUS_CYCLE.indexOf(current);
+    var next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+    setStatusColor(field, next);
+    persistField(field);
+  }
+
+  function saveToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState()));
+    } catch (e) { /* best-effort local cache only */ }
+  }
+
+  function loadFromStorage() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) applyState(JSON.parse(raw));
+    } catch (e) { /* ignore */ }
+  }
+
+  // ---------- Sincronización entre dispositivos (Google Apps Script) ----------
+
+  function fieldDocData(f) {
+    return {
+      value: f.classList.contains("is-vacant") ? "" : f.textContent.trim(),
+      status: getStatus(f)
+    };
+  }
+
+  // POST sin preflight de CORS: Content-Type "text/plain" + el body es JSON igual.
+  function pushUpdate(payload) {
+    return fetch(SYNC_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    }).then(function(resp) {
+      if (!resp.ok) throw new Error("http " + resp.status);
+      return resp.json();
+    });
+  }
+
+  function applyRemoteState(state) {
+    if (!state || !state.names) return;
+    fields.forEach(function(f) {
+      var id = f.getAttribute("data-id");
+      if (document.activeElement === f) return; // no pisar lo que se está escribiendo ahora
+      if (Object.prototype.hasOwnProperty.call(state.names, id)) {
+        var entry = state.names[id];
+        setFieldValue(f, (entry.value || "").trim());
+        setStatusColor(f, entry.status || "");
+      }
+    });
+    saveToStorage();
+  }
+
+  function pullRemote(isInitialLoad) {
+    if (!SYNC_URL) return;
+    fetch(SYNC_URL, { cache: "no-store" }).then(function(resp) {
+      if (!resp.ok) throw new Error("http " + resp.status);
+      return resp.json();
+    }).then(function(state) {
+      applyRemoteState(state);
+      setSyncBadge("synced");
+    }).catch(function(err) {
+      console.error("sync read error", err);
+      if (isInitialLoad) setSyncBadge("local");
+    });
+  }
+
+  // Guarda un campo: cache local inmediata + escritura a la planilla compartida (si está configurada)
+  function persistField(f) {
+    saveToStorage();
+    var id = f.getAttribute("data-id");
+    if (!SYNC_URL) {
+      setStatus("Guardado " + new Date().toLocaleTimeString());
+      return;
+    }
+    var payload = fieldDocData(f);
+    payload.id = id;
+    pushUpdate(payload).then(function() {
+      setStatus("Sincronizado " + new Date().toLocaleTimeString());
+    }).catch(function(err) {
+      console.error("sync write error", err);
+      setStatus("No se pudo sincronizar (reintentá en unos segundos)");
+    });
+  }
+
+  // Empuja TODOS los campos actuales a la planilla compartida (botón "Sincronizar" / tras importar JSON)
+  function persistAllFields() {
+    saveToStorage();
+    if (!SYNC_URL) {
+      setStatus("Guardado " + new Date().toLocaleTimeString());
+      return;
+    }
+    var bulk = fields.map(function(f) {
+      var id = f.getAttribute("data-id");
+      var d = fieldDocData(f);
+      d.id = id;
+      return d;
+    });
+    pushUpdate({ bulk: bulk }).then(function() {
+      setStatus("Sincronizado " + new Date().toLocaleTimeString());
+    }).catch(function(err) {
+      console.error("sync bulk write error", err);
+      setStatus("No se pudo sincronizar todo");
+    });
+  }
+
+  function initDb() {
+    if (!SYNC_URL) {
+      setSyncBadge("local");
+      return;
+    }
+    pullRemote(true);
+    // Otros usuarios no avisan en vivo: se revisa la planilla cada 8s y al volver a la pestaña.
+    pollTimer = setInterval(function() { pullRemote(false); }, 8000);
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible") pullRemote(false);
+    });
+  }
+
+  function initDownloads() {
+    if (!window.claude || typeof window.claude.use !== "function") return;
+    window.claude.use("downloads").then(function(d) { downloadsApi = d; }).catch(function() {});
+  }
+
+  document.getElementById("btn-print").addEventListener("click", function() {
+    if (document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("field")) {
+      document.activeElement.blur();
+    }
+    exportPdf();
+  });
+
+  function exportPdf() {
+    var btn = document.getElementById("btn-print");
+    var pages = Array.prototype.slice.call(document.querySelectorAll(".page"));
+    if (!pages.length) return;
+    var originalLabel = btn.textContent;
+    btn.textContent = "⏳ Generando PDF…";
+    btn.disabled = true;
+    setStatus("Generando PDF horizontal, puede tardar unos segundos…");
+
+    var jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : window.jsPDF;
+    var pdf = new jsPDFCtor({ orientation: "landscape", unit: "mm", format: "a3" });
+    var pageW = pdf.internal.pageSize.getWidth();
+    var pageH = pdf.internal.pageSize.getHeight();
+    var margin = 8;
+
+    function renderPage(i) {
+      if (i >= pages.length) {
+        var filename = "ANES_Estructura_" + new Date().toISOString().slice(0,10) + ".pdf";
+        finishPdf(pdf, filename, btn, originalLabel);
+        return;
+      }
+      html2canvas(pages[i], { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then(function(canvas) {
+        var imgData = canvas.toDataURL("image/jpeg", 0.95);
+        var availW = pageW - margin * 2;
+        var availH = pageH - margin * 2;
+        var ratio = Math.min(availW / canvas.width, availH / canvas.height);
+        var imgW = canvas.width * ratio;
+        var imgH = canvas.height * ratio;
+        var x = (pageW - imgW) / 2;
+        var y = (pageH - imgH) / 2;
+        if (i > 0) pdf.addPage("a3", "landscape");
+        pdf.addImage(imgData, "JPEG", x, y, imgW, imgH);
+        renderPage(i + 1);
+      }).catch(function(err) {
+        console.error(err);
+        setStatus("Error generando el PDF");
+        btn.textContent = originalLabel;
+        btn.disabled = false;
+      });
+    }
+    renderPage(0);
+  }
+
+  function finishPdf(pdf, filename, btn, originalLabel) {
+    var blob = pdf.output("blob");
+    function done(msg) {
+      btn.textContent = originalLabel;
+      btn.disabled = false;
+      setStatus(msg);
+    }
+    if (downloadsApi) {
+      downloadsApi.save({ filename: filename, data: blob }).then(function() {
+        done("PDF descargado");
+      }).catch(function(err) {
+        console.error("download error", err);
+        if (err && err.code === "declined") { done(""); return; }
+        done("No se pudo descargar el PDF");
+      });
+    } else {
+      // Sin la capacidad de descargas (archivo local, fuera del visor): método clásico
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      done("PDF descargado");
+    }
+  }
+
+  function saveJsonFile(data, filename) {
+    if (downloadsApi) {
+      downloadsApi.save({ filename: filename, data: data }).then(function() {
+        setStatus("JSON exportado");
+      }).catch(function(err) {
+        console.error("download error", err);
+        if (err && err.code === "declined") return;
+        setStatus("No se pudo descargar el JSON");
+      });
+    } else {
+      var blob = new Blob([data], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus("JSON exportado");
+    }
+  }
+
+  document.getElementById("btn-export").addEventListener("click", function() {
+    var data = JSON.stringify(currentState(), null, 2);
+    var stamp = new Date().toISOString().slice(0,10);
+    saveJsonFile(data, "ANES_Designaciones_" + stamp + ".json");
+  });
+
+  initDownloads();
+})();
+</script>
+</body>
+</html>
